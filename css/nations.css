@@ -31,7 +31,7 @@ body{
   color:var(--texto-claro);
   background:
     var(--bg-fundo-overlay),
-    url("../images/plano_fundo_nations.jpg") center / cover fixed no-repeat;
+    url("../img/plano_fundo_nations.jpg") center / cover fixed no-repeat;
   min-height:100vh;
   transition:color .25s;
 }
@@ -141,6 +141,9 @@ button{
   font-size:.9rem;
   transition:.2s;
   border:1px solid var(--borda);
+  text-decoration:none;
+  display:inline-block;
+  cursor:pointer;
 }
 
 .main-tab-btn{font-size:1rem;padding:10px 26px;}

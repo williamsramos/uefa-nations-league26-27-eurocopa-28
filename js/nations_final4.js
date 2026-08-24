@@ -140,7 +140,7 @@ function renderFinal4(){
   let bannerHtml = "";
   if(finalBox.vencedor){
     bannerHtml = `<div class="f4-champion-banner">
-      <img src="images/trofeu_nations.png" alt="Troféu" class="trofeu-banner" onerror="this.style.display='none'">
+      <img src="img/trofeu_nations.png" alt="Troféu" class="trofeu-banner" onerror="this.style.display='none'">
       <div class="titulo">Campeão da Nations League 2026/2027</div>
       <div class="nome">${flagImg(finalBox.vencedor)} ${finalBox.vencedor}</div>
       <button id="usarPodioFinal4Btn">Usar este pódio na aba Campeões</button>

@@ -1,44 +1,9 @@
 /* =======================================================================
    NATIONS.JS
-   Dados gerais (seleções, bandeiras, grupos, campeões) + navegação por
-   abas + cálculo/renderização da classificação.
+   Dados e lógica específicos da página da Nations League: grupos,
+   classificação, busca de seleção, modo compacto e campeões.
+   (Depende de common.js já carregado antes: safeOn, flagImg, normaliza)
    ======================================================================= */
-
-/* Utilitário: só regista o listener se o elemento existir (evita que a
-   página inteira quebre se algum HTML estiver desatualizado/faltando) */
-function safeOn(id, event, handler){
-  const el = document.getElementById(id);
-  if(el) el.addEventListener(event, handler);
-  return el;
-}
-
-/* ---------- Bandeiras (código ISO usado no flagcdn.com) ---------- */
-const FLAGS = {
-  "França":"fr", "Itália":"it", "Bélgica":"be", "Turquia":"tr",
-  "Alemanha":"de", "Países Baixos":"nl", "Sérvia":"rs", "Grécia":"gr",
-  "Espanha":"es", "Croácia":"hr", "Inglaterra":"gb-eng", "Chéquia":"cz",
-  "Portugal":"pt", "Dinamarca":"dk", "Noruega":"no", "País de Gales":"gb-wls",
-  "Escócia":"gb-sct", "Suíça":"ch", "Eslovénia":"si", "Macedónia do Norte":"mk",
-  "Hungria":"hu", "Ucrânia":"ua", "Geórgia":"ge", "Irlanda do Norte":"gb-nir",
-  "Israel":"il", "Áustria":"at", "República da Irlanda":"ie", "Kosovo":"xk",
-  "Polónia":"pl", "Bósnia e Herzegovina":"ba", "Roménia":"ro", "Suécia":"se",
-  "Albânia":"al", "Finlândia":"fi", "Bielorrússia":"by", "San Marino":"sm",
-  "Chipre":"cy", "Montenegro":"me", "Arménia":"am", "Letónia":"lv",
-  "Ilhas Faroé":"fo", "Cazaquistão":"kz", "Eslováquia":"sk", "República da Moldávia":"md",
-  "Islândia":"is", "Bulgária":"bg", "Estónia":"ee", "Luxemburgo":"lu",
-  "Gibraltar":"gi", "Malta":"mt", "Andorra":"ad",
-  "Azerbaijão":"az", "Lituânia":"lt", "Liechtenstein":"li"
-};
-
-function flagUrl(team){
-  const code = FLAGS[team];
-  return code ? `https://flagcdn.com/w80/${code}.png` : "";
-}
-
-function flagImg(team, cls="flag"){
-  if(!FLAGS[team]) return "";
-  return `<img class="${cls}" src="${flagUrl(team)}" alt="Bandeira de ${team}" loading="lazy">`;
-}
 
 /* ---------- Grupos da Nations League 2026/2027 ---------- */
 const GROUPS = {
@@ -85,52 +50,9 @@ let podio2027 = { campeao:"", vice:"", terceiro:"" };
 const matchResults = {}; // chave -> {golsCasa, golsFora}
 
 /* =======================================================================
-   NAVEGAÇÃO PRINCIPAL (Nations League / Eurocopa)
+   SUB-ABAS DESTA PÁGINA
    ======================================================================= */
-safeOn("mainTabs", "click", (e)=>{
-  const btn = e.target.closest(".main-tab-btn");
-  if(!btn) return;
-  document.querySelectorAll(".main-tab-btn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  const target = btn.dataset.main;
-  document.querySelectorAll(".main-section").forEach(s=>s.classList.remove("active"));
-  document.getElementById(target)?.classList.add("active");
-});
-
-/* Sub-abas genéricas: Classificação / Jogos / Campeões (funciona tanto
-   para a Nations League como para a Eurocopa, cada uma com o seu nav) */
-function bindSubTabs(navId){
-  const nav = document.getElementById(navId);
-  if(!nav) return;
-  nav.addEventListener("click",(e)=>{
-    const btn = e.target.closest(".sub-tab-btn");
-    if(!btn) return;
-    nav.querySelectorAll(".sub-tab-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    const parent = nav.parentElement;
-    parent.querySelectorAll(".sub-section").forEach(s=>s.classList.remove("active"));
-    document.getElementById(btn.dataset.sub)?.classList.add("active");
-
-    // Atualiza o conteúdo da aba ao entrar nela
-    if(btn.dataset.sub === "classificacao" && typeof renderStandings === "function") renderStandings();
-    if(btn.dataset.sub === "jogos" && typeof renderJogos === "function") renderJogos();
-    if(btn.dataset.sub === "final4" && typeof renderFinal4 === "function") renderFinal4();
-  });
-}
 bindSubTabs("nationsSubTabs");
-bindSubTabs("euroSubTabs");
-
-/* =======================================================================
-   TEMA CLARO / ESCURO
-   ======================================================================= */
-const themeToggleBtn = document.getElementById("themeToggle");
-if(themeToggleBtn){
-  themeToggleBtn.addEventListener("click", ()=>{
-    document.body.classList.toggle("light-mode");
-    const isLight = document.body.classList.contains("light-mode");
-    themeToggleBtn.textContent = isLight ? "☀️" : "🌙";
-  });
-}
 
 /* =======================================================================
    BUSCA RÁPIDA DE SELEÇÃO
@@ -138,10 +60,6 @@ if(themeToggleBtn){
 let buscaAtual = "";
 const buscaInput = document.getElementById("buscaSelecao");
 const limparBuscaBtn = document.getElementById("limparBuscaBtn");
-
-function normaliza(str){
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
 
 if(buscaInput){
   buscaInput.addEventListener("input", ()=>{
@@ -327,7 +245,7 @@ function renderStandings(){
 }
 
 /* =======================================================================
-   MODO COMPACTO (só posição, seleção e pontos)
+   MODO COMPACTO (posição, seleção, V/E/D e pontos — só no responsivo)
    ======================================================================= */
 let modoCompactoAtivo = false;
 const modoCompactoBtn = document.getElementById("modoCompactoBtn");
@@ -383,57 +301,6 @@ safeOn("salvarPodioBtn", "click", ()=>{
   renderChampionsHistory();
 });
 
-/* ---------- Campeões da Eurocopa (histórico geral, apenas informativo) ---------- */
-const EURO_CHAMPIONS_HISTORY = [
-  { edicao:"2016", campeao:"Portugal", vice:"França", terceiro:"—" },
-  { edicao:"2020", campeao:"Itália", vice:"Inglaterra", terceiro:"—" },
-  { edicao:"2024", campeao:"Espanha", vice:"Inglaterra", terceiro:"—" }
-];
-
-function renderEuroChampions(){
-  const container = document.getElementById("euroChampionsHistory");
-  if(!container) return;
-  container.innerHTML = EURO_CHAMPIONS_HISTORY.map(c=>`
-    <div class="champion-card">
-      <div class="edicao">${c.edicao}</div>
-      <div class="podio-line">🥇 ${flagImg(c.campeao)} ${c.campeao}</div>
-      <div class="podio-line">🥈 ${flagImg(c.vice)} ${c.vice}</div>
-    </div>
-  `).join("");
-}
-
-/* =======================================================================
-   BOTÃO VOLTAR AO TOPO
-   ======================================================================= */
-const voltarTopoBtn = document.getElementById("voltarTopoBtn");
-if(voltarTopoBtn){
-  function estaNoFimDaPagina(){
-    const scrollY = window.scrollY || document.documentElement.scrollTop;
-    const alturaVisivel = window.innerHeight;
-    const alturaTotal = document.documentElement.scrollHeight;
-    // pequena margem de tolerância (20px) para telas/zoom que não fecham exatamente no pixel
-    return (scrollY + alturaVisivel) >= (alturaTotal - 20);
-  }
-
-  window.addEventListener("scroll", ()=>{
-    voltarTopoBtn.classList.toggle("show", estaNoFimDaPagina());
-  });
-  window.addEventListener("resize", ()=>{
-    voltarTopoBtn.classList.toggle("show", estaNoFimDaPagina());
-  });
-
-  // Reavalia quando o conteúdo da página muda de tamanho (troca de aba,
-  // preenchimento de placares, etc.), já que isso muda onde é "o fim"
-  const observadorConteudo = new MutationObserver(()=>{
-    voltarTopoBtn.classList.toggle("show", estaNoFimDaPagina());
-  });
-  observadorConteudo.observe(document.body, { childList:true, subtree:true });
-
-  voltarTopoBtn.addEventListener("click", ()=>{
-    window.scrollTo({ top:0, behavior:"smooth" });
-  });
-}
-
 /* =======================================================================
    INICIALIZAÇÃO
    ======================================================================= */
@@ -441,5 +308,4 @@ document.addEventListener("DOMContentLoaded", ()=>{
   renderGrupoTabs();      // já chama renderStandings() para "Todos"
   fillPodioSelects();
   renderChampionsHistory();
-  renderEuroChampions();
 });
